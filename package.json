@@ -1,8 +1,8 @@
 {
-  "name": "goit-react-hw-03-image-finder",
+  "name": "goit-react-hw-04-images",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://IvanTymoshchuk.github.io/goit-react-hw-03-image-finder/",
+  "homepage": "https://IvanTymoshchuk.github.io/goit-react-hw-04-images/",
   "dependencies": {
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
