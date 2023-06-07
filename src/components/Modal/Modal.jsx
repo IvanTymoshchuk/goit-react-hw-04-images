@@ -1,41 +1,33 @@
-import { Component } from 'react';
+import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Overlay, ModalDiv } from './Modal.styled';
 
 const modalRoot = document.querySelector('#modal-root');
 
-export class Modal extends Component {
-  // слухач для кнопок
-  componentDidMount() {
-    window.addEventListener('keydown', this.handleClickEsc);
-  }
-  // чистимо за собою після закриття модалки
-  componentWillUnmount() {
-    window.removeEventListener('keydown', this.handleClickEsc);
-  }
-
-  handleClickEsc = e => {
+export const Modal = ({ onClose, children }) => {
+  useEffect(() => {
     // перевірка клавіші Escape
-    if (e.code === 'Escape') {
-      this.props.onClose();
-    }
-  };
+    const handleClickEsc = e => {
+      if (e.code === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleClickEsc);
 
-  // закриття модалки по кліку на бекдроп
-  handleClickBackdrop = e => {
-    // перевірка чи клік був на бекдроп
+    return () => window.removeEventListener('keydown', handleClickEsc);
+  }, [onClose]);
+
+  // перевірка чи клік був на бекдроп
+  const handleClickBackdrop = e => {
     if (e.currentTarget === e.target) {
-      this.props.onClose();
+      onClose();
     }
   };
 
-  render() {
-    const { children } = this.props;
-    return createPortal(
-      <Overlay onClick={this.handleClickBackdrop}>
-        <ModalDiv>{children}</ModalDiv>
-      </Overlay>,
-      modalRoot
-    );
-  }
-}
+  return createPortal(
+    <Overlay onClick={handleClickBackdrop}>
+      <ModalDiv>{children}</ModalDiv>
+    </Overlay>,
+    modalRoot
+  );
+};

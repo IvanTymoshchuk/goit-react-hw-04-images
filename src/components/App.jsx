@@ -1,5 +1,6 @@
+/* eslint-disable jsx-a11y/alt-text */
 import 'react-toastify/dist/ReactToastify.css';
-import { Component } from 'react';
+import { useEffect, useState } from 'react';
 import { Searchbar } from './Searchbar/Searchbar';
 import { ImageGallery } from './ImageGallery/ImageGallery';
 import { Button } from 'components/Button/Button';
@@ -8,99 +9,94 @@ import { Modal } from 'components/Modal/Modal';
 import { ImageErrorView } from './ImageErrorView/ImageErrorView';
 import { imgApi } from 'service/imgApi';
 
-export class App extends Component {
-  state = {
-    textQuery: '',
-    images: [],
-    page: 1,
-    loading: false, // spiner
-    showModal: false,
-    error: null,
-    totalPage: null,
-  };
+export const App = () => {
+  const [textQuery, setTextQuery] = useState('');
+  const [images, setImages] = useState([]);
+  const [page, setPage] = useState(1);
+  const [totalPage, setTotalPage] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [error, setError] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
 
-  async componentDidUpdate(_, prevState) {
-    let { page } = this.state;
-    const prevSearchValue = prevState.textQuery;
-    const nextSearchValue = this.state.textQuery;
+  useEffect(() => {
+    if (!textQuery) return;
 
-    // Перевіряємо, чи змінились пропси запиту або state сторінки (page)
-    if (prevSearchValue !== nextSearchValue || prevState.page !== page) {
+    async function componentDidUpdate() {
       // запуск спінера
-      this.setState({ loading: true });
+      setLoading(true);
 
       //  запит на бекенд
       try {
-        const response = await imgApi(nextSearchValue, page);
+        const response = await imgApi(textQuery, page);
         const { hits, totalHits } = response.data;
-        this.setState(prevState => ({
-          images: [...prevState.images, ...hits],
-          totalPage: totalHits,
-        }));
+        setImages(
+          prevImages => [...prevImages, ...hits],
+          setTotalPage(totalHits)
+        );
       } catch (error) {
-        this.setState({ error: 'Something wrong. Please try again.' });
+        setError({ error: 'Something wrong. Please try again.' });
       } finally {
-        this.setState({ loading: false });
+        setLoading(false);
       }
     }
-  }
+    componentDidUpdate();
+  }, [page, textQuery]);
 
   //  запит пошуку в App з Searchbar
-  handleSubmit = searchValue => {
-    this.setState({
-      textQuery: searchValue,
-      page: 1,
-      images: [],
-      loading: false,
-      showModal: false,
-      error: null,
-      totalPage: null,
-    });
+  const handleSubmit = searchValue => {
+    if (textQuery === searchValue) {
+      return;
+    }
+    setTextQuery(searchValue);
+    setPage(1);
+    setImages([]);
+    setLoading(false);
+    setShowModal(false);
+    setError(null);
+    setTotalPage(null);
   };
 
   // кнопка завантаження наступних фото
-  onLoadMore = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }));
+  const onLoadMore = () => {
+    setPage(prevPage => prevPage + 1);
   };
 
   //модалка відкрити
-  onOpenModal = (imgUrl, tag) => {
-    this.setState({ showModal: true, imgUrl, tag });
+  const onOpenModal = images => {
+    setShowModal(true);
+    setSelectedImage(images);
   };
 
   //модалка закрити
-  onCloseModal = () => {
-    this.setState({ showModal: false });
+  const onCloseModal = () => {
+    setShowModal(false);
   };
 
-  render() {
-    const { images, showModal, imgUrl, tag, loading, totalPage, error, page } =
-      this.state;
-    return (
-      <>
-        <Searchbar onSubmit={this.handleSubmit} />
+  return (
+    <>
+      <Searchbar onSubmit={handleSubmit} />
 
-        <ImageGallery images={images} openModal={this.onOpenModal} />
+      <ImageGallery images={images} openModal={onOpenModal} />
 
-        {/* модалка  */}
-        {showModal && (
-          <Modal onClose={this.onCloseModal}>
-            <img src={imgUrl} alt={tag} />
-          </Modal>
-        )}
+      {/* модалка  */}
+      {showModal && (
+        <Modal onClose={onCloseModal}>
+          <img src={selectedImage} />
+        </Modal>
+      )}
 
-        {/* спінер */}
-        <Loader isLoading={loading} />
+      {/* спінер */}
+      <Loader isLoading={loading} />
 
-        {/* кнопка завантажити ще */}
-        {totalPage / 12 > page && <Button loadMore={this.onLoadMore} />}
+      {/* кнопка завантажити ще */}
+      {totalPage / 12 > page && <Button loadMore={onLoadMore} />}
 
-        {/* нічого не знайшло */}
-        {totalPage === 0 && <ImageErrorView />}
+      {/* нічого не знайшло */}
+      {totalPage === 0 && <ImageErrorView />}
 
-        {/* помилка запиту */}
-        {error && <ImageErrorView>{error}</ImageErrorView>}
-      </>
-    );
-  }
-}
+      {/* помилка запиту */}
+      {error && <ImageErrorView>{error}</ImageErrorView>}
+    </>
+  );
+};
